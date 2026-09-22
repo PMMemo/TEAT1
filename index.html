@@ -15,7 +15,20 @@
 <link rel="manifest" id="manifestLink">
 <script>
   // 用 data: URI 內嵌 manifest，這樣不需要另外一個檔案
-   const manifest = { name: "備忘錄看板", short_name: "備忘錄", start_url: location.pathname + "#banner", display: "fullscreen", orientation: "landscape", background_color: "#F1ECE0", theme_color: "#F1ECE0", icons: [{ src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23A8402F'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }] }; document.getElementById('manifestLink').setAttribute( 'href', 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest)) );
+  const manifest = {
+    name: "備忘錄看板",
+    short_name: "備忘錄",
+    start_url: location.pathname + "#banner",
+    display: "fullscreen",
+    orientation: "landscape",
+    background_color: "#F1ECE0",
+    theme_color: "#F1ECE0",
+    icons: [{ src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23A8402F'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }]
+  };
+  document.getElementById('manifestLink').setAttribute(
+    'href',
+    'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest))
+  );
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -75,14 +88,15 @@
   .setup-warning { background:#fff3cd; border:1px solid #e0c46c; color:#5a4a12; font-size:13px; padding:10px 12px;
     border-radius:8px; margin-bottom:16px; line-height:1.6; }
 
-  /* ---------- 橫幅看板模式：備忘錄 | 行事曆 | 天氣（給 LD 290EJS 這類超寬短螢幕）---------- */
+  /* ---------- 橫幅看板模式：備忘錄 | 代辦事項 | 行事曆 | 天氣 ---------- */
   #bannerRoot { position:fixed; inset:0; display:flex; background:var(--paper); color:var(--ink); }
   .b-col { padding: 2.6vh 2vw; display:flex; flex-direction:column; overflow:hidden; }
   .b-col + .b-col { border-left:1px solid var(--rule); }
   .b-title { font-family:'Lora',serif; font-weight:600; font-size:2vh; margin-bottom:1.2vh; padding-bottom:0.9vh;
     border-bottom:1px solid var(--rule); flex-shrink:0; }
-  .b-memo { flex: 0 0 30vw; }
-  .b-calendar { flex: 0 0 42vw; }
+  .b-memo { flex: 0 0 20vw; }
+  .b-todo { flex: 0 0 20vw; }
+  .b-calendar { flex: 0 0 34vw; }
   .b-weather { flex: 1; }
   .b-list { flex:1; overflow:hidden; display:flex; flex-direction:column; gap:1vh; }
   .b-row { display:flex; gap:0.8vw; font-size:2.1vh; line-height:1.3; }
@@ -147,7 +161,14 @@
 <div id="bannerRoot" hidden>
   <button class="banner-exit" id="bannerExitBtn" type="button">離開橫幅模式</button>
 
-   <div class="b-col b-memo"> <div class="b-title">備忘錄</div> <div class="b-list" id="bMemoList"></div> </div> <div class="b-col b-todo"> <div class="b-title">今日代辦</div> <div class="b-list" id="bTodoList"></div> </div> <div class="b-col b-calendar">
+  <div class="b-col b-memo">
+    <div class="b-title">備忘錄</div>
+    <div class="b-list" id="bMemoList"></div>
+  </div>
+
+  <div class="b-col b-todo">
+    <div class="b-title">今日代辦</div>
+    <div class="b-list" id="bTodoList"></div>
   </div>
 
   <div class="b-col b-calendar">
@@ -172,9 +193,14 @@
 
 // 1) Firebase 專案設定（Firebase 主控台 → 專案設定 → 一般 → 你的應用程式 → SDK 設定與配置）
 const firebaseConfig = {
-  apiKey: "AIzaSyDCC7MNUdCIzzBrQgwgKm4GW7iBt7QAWEE", authDomain: "pmweb-b07e6.firebaseapp.com", projectId: "pmweb-b07e6", storageBucket: "pmweb-b07e6.firebasestorage.app", messagingSenderId: "815602437191", appId: "1:815602437191:web:10a8276ed4264d51e37562", measurementId: "G-YXSCNCT48Z"
+  apiKey: "AIzaSyDCC7MNUdCIzzBrQgwgKm4GW7iBt7QAWEE",
+  authDomain: "pmweb-b07e6.firebaseapp.com",
+  projectId: "pmweb-b07e6",
+  storageBucket: "pmweb-b07e6.firebasestorage.app",
+  messagingSenderId: "815602437191",
+  appId: "1:815602437191:web:10a8276ed4264d51e37562",
+  measurementId: "G-YXSCNCT48Z"
 };
-  
 
 // 2) Google 行事曆：日曆設定 → 「與特定使用者共用」下方的「垃圾整合」or「公開」→ 複製「行事曆 ID」
 //    （通常長得像 xxxxxxxx@group.calendar.google.com，或你自己的 gmail 位址）
@@ -282,7 +308,7 @@ function renderTodos() {
   const items = todoView === 'date'
     ? todos.filter(t => t.date === selectedDate).sort((a,b) => (a.createdAt||0)-(b.createdAt||0))
     : todos.filter(t => !t.done).sort((a,b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||0)-(b.createdAt||0));
-     renderBannerTodos();
+  renderBannerTodos();
   todoList.innerHTML = items.length === 0
     ? `<div class="empty">${todoView === 'date' ? '這天還沒有代辦事項。' : '太好了，沒有未完成的代辦事項。'}</div>`
     : items.map(t => `
@@ -307,7 +333,7 @@ document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', (
   $('#memoSection').hidden = b.dataset.tab !== 'memo';
   $('#todoSection').hidden = b.dataset.tab !== 'todo';
 }));
- /* ---------------- 樫幅看板：代辦事項欄（只顯示今天的） ---------------- */ function renderBannerTodos() { const el = $('#bTodoList'); if (!el) return; const t = todayStr(); const shown = todos .filter(x => x.date === t) .sort((a, b) => (a.done !== b.done) ? (a.done ? 1 : -1) : (a.createdAt || 0) - (b.createdAt || 0)) .slice(0, 8); el.innerHTML = shown.length === 0 ? '<div class="b-empty">今天還沒有代辦事項</div>' : shown.map(x => `<div class="b-row ${x.done ? 'b-row-done' : ''}"><span class="mark"></span><span>${esc(x.text)}</span></div>`).join(''); }
+
 /* ---------------- 橫幅看板：備忘錄欄 ---------------- */
 function renderBannerMemos() {
   const el = $('#bMemoList');
@@ -316,6 +342,20 @@ function renderBannerMemos() {
   el.innerHTML = shown.length === 0
     ? '<div class="b-empty">還沒有備忘錄</div>'
     : shown.map(m => `<div class="b-row"><span class="mark"></span><span>${esc(m.text)}</span></div>`).join('');
+}
+
+/* ---------------- 橫幅看板：代辦事項欄（只顯示今天的） ---------------- */
+function renderBannerTodos() {
+  const el = $('#bTodoList');
+  if (!el) return;
+  const t = todayStr();
+  const shown = todos
+    .filter(x => x.date === t)
+    .sort((a, b) => (a.done !== b.done) ? (a.done ? 1 : -1) : (a.createdAt || 0) - (b.createdAt || 0))
+    .slice(0, 8);
+  el.innerHTML = shown.length === 0
+    ? '<div class="b-empty">今天還沒有代辦事項</div>'
+    : shown.map(x => `<div class="b-row ${x.done ? 'b-row-done' : ''}"><span class="mark"></span><span>${esc(x.text)}</span></div>`).join('');
 }
 
 /* ---------------- 橫幅看板：行事曆欄 ---------------- */
