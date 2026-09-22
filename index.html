@@ -92,27 +92,42 @@
   #bannerRoot { position:fixed; inset:0; display:flex; background:var(--paper); color:var(--ink); }
   .b-col { padding: 2.6vh 2vw; display:flex; flex-direction:column; overflow:hidden; }
   .b-col + .b-col { border-left:1px solid var(--rule); }
-  .b-title { font-family:'Lora',serif; font-weight:600; font-size:2vh; margin-bottom:1.2vh; padding-bottom:0.9vh;
-    border-bottom:1px solid var(--rule); flex-shrink:0; }
+  .b-title { font-family:'Lora',serif; font-weight:600; font-size:4vh; margin-bottom:2vh; padding-bottom:1.6vh;
+    border-bottom:1px solid var(--rule); flex-shrink:0; display:flex; align-items:baseline; gap:1vh; flex-wrap:wrap; }
+  .b-title-date { font-size:1.8vh; color:var(--ink-soft); font-weight:600; font-family:'Inter',sans-serif; }
   .b-memo { flex: 0 0 20vw; }
-  .b-todo { flex: 0 0 20vw; }
-  .b-calendar { flex: 0 0 34vw; }
+  .b-todo { flex: 0 0 22vw; }
+  .b-calendar { flex: 0 0 26vw; }
   .b-weather { flex: 1; }
-  .b-list { flex:1; overflow:hidden; display:flex; flex-direction:column; gap:1vh; }
-  .b-row { display:flex; gap:0.8vw; font-size:2.1vh; line-height:1.3; }
+  .b-list { flex:1; overflow:hidden; display:flex; flex-direction:column; gap:1.6vh; }
+  .b-row { display:flex; align-items:flex-start; gap:1vw; font-size:4.2vh; line-height:1.25; }
   .b-row-done { opacity:.4; text-decoration:line-through; }
-  .b-row .mark { width:1.2vh; height:1.2vh; border-radius:50%; background:var(--stamp); flex-shrink:0; margin-top:0.8vh; }
-  .b-empty { color:var(--ink-soft); font-family:'Lora',serif; font-style:italic; font-size:1.8vh; }
-  .b-calendar iframe { flex:1; width:100%; border:none; border-radius:8px; background:#fff; }
-  .b-weather-now { display:flex; align-items:baseline; gap:1vw; margin-bottom:1.5vh; }
-  .b-weather-temp { font-family:'Lora',serif; font-weight:600; font-size:8vh; line-height:1; }
-  .b-weather-desc { font-size:2vh; color:var(--ink-soft); }
-  .b-weather-days { display:flex; flex-direction:column; gap:0.8vh; }
-  .b-weather-day-row { display:flex; justify-content:space-between; font-size:1.9vh; }
+  .b-row .mark { width:2.2vh; height:2.2vh; border-radius:50%; background:var(--stamp); flex-shrink:0; margin-top:1vh; }
+  .b-todo-check { width:2.6vh; height:2.6vh; border-radius:6px; border:2px solid var(--ink-soft); background:transparent;
+    flex-shrink:0; margin-top:0.6vh; cursor:pointer; color:transparent; font-size:1.8vh; padding:0; display:flex;
+    align-items:center; justify-content:center; }
+  .b-todo-check.checked { background:var(--stamp); border-color:var(--stamp); color:var(--paper-raised); }
+  .b-todo-date { font-size:1.7vh; color:var(--ink-soft); font-weight:600; font-family:'Inter',sans-serif; }
+  .b-empty { color:var(--ink-soft); font-family:'Lora',serif; font-style:italic; font-size:3.4vh; }
+  .b-calendar iframe { flex:1; width:118%; height:118%; border:none; border-radius:8px; background:#fff;
+    transform: scale(0.847); transform-origin: top left; }
+  .b-calendar { overflow:hidden; }
+  .b-weather-now { display:flex; align-items:baseline; gap:1.2vw; margin-bottom:3vh; }
+  .b-weather-temp { font-family:'Lora',serif; font-weight:600; font-size:16vh; line-height:1; position:relative; }
+  .b-weather-temp::after {
+    content:''; position:absolute; right:-1.6vh; top:0.6vh; width:1.1vh; height:1.1vh; border-radius:50%;
+    border:0.35vh solid var(--stamp); animation: b-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes b-pulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.5); opacity:.4; } }
+  .b-weather-desc { font-size:3.6vh; color:var(--ink-soft); display:flex; align-items:center; gap:0.8vh; }
+  .b-weather-icon { display:inline-block; animation: b-float 3s ease-in-out infinite; }
+  @keyframes b-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-0.8vh); } }
+  .b-weather-days { display:flex; flex-direction:column; gap:1.4vh; }
+  .b-weather-day-row { display:flex; justify-content:space-between; font-size:3.4vh; }
   .banner-exit { position:absolute; top:10px; right:12px; font-size:11px; color:var(--ink-soft); background:var(--paper-raised);
     border:1px solid var(--rule); border-radius:6px; padding:4px 8px; cursor:pointer; opacity:.5; }
   .banner-exit:hover { opacity:1; }
-  .b-clock { font-family:'Lora',serif; font-style:italic; font-size:1.6vh; color:var(--ink-soft); }
+  .b-clock { font-family:'Lora',serif; font-style:italic; font-size:2.8vh; color:var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -167,7 +182,7 @@
   </div>
 
   <div class="b-col b-todo">
-    <div class="b-title">今日代辦</div>
+    <div class="b-title"><span>今日代辦</span><span class="b-title-date" id="bTodoDate"></span></div>
     <div class="b-list" id="bTodoList"></div>
   </div>
 
@@ -344,18 +359,32 @@ function renderBannerMemos() {
     : shown.map(m => `<div class="b-row"><span class="mark"></span><span>${esc(m.text)}</span></div>`).join('');
 }
 
-/* ---------------- 橫幅看板：代辦事項欄（只顯示今天的） ---------------- */
+/* ---------------- 橫幅看板：代辦事項欄（只顯示今天的，可勾選） ---------------- */
 function renderBannerTodos() {
   const el = $('#bTodoList');
   if (!el) return;
   const t = todayStr();
+  const dateLabel = $('#bTodoDate');
+  if (dateLabel) {
+    const d = new Date();
+    const weekday = ['日','一','二','三','四','五','六'][d.getDay()];
+    dateLabel.textContent = `${d.getMonth()+1}/${d.getDate()}（週${weekday}）`;
+  }
   const shown = todos
     .filter(x => x.date === t)
     .sort((a, b) => (a.done !== b.done) ? (a.done ? 1 : -1) : (a.createdAt || 0) - (b.createdAt || 0))
     .slice(0, 8);
   el.innerHTML = shown.length === 0
     ? '<div class="b-empty">今天還沒有代辦事項</div>'
-    : shown.map(x => `<div class="b-row ${x.done ? 'b-row-done' : ''}"><span class="mark"></span><span>${esc(x.text)}</span></div>`).join('');
+    : shown.map(x => `
+      <div class="b-row">
+        <button class="b-todo-check ${x.done ? 'checked' : ''}" data-id="${x.id}">${x.done ? '✓' : ''}</button>
+        <span class="${x.done ? 'b-row-done' : ''}">${esc(x.text)}</span>
+      </div>`).join('');
+  el.querySelectorAll('.b-todo-check').forEach(b => b.addEventListener('click', () => {
+    const item = todos.find(x => x.id === b.dataset.id);
+    if (item && db) updateDoc(doc(db, 'todos', b.dataset.id), { done: !item.done });
+  }));
 }
 
 /* ---------------- 橫幅看板：行事曆欄 ---------------- */
@@ -386,6 +415,12 @@ const WEATHER_CODE_MAP = {
   71: '小雪', 73: '中雪', 75: '大雪', 80: '陣雨', 81: '陣雨', 82: '強陣雨',
   95: '雷雨', 96: '雷雨挾冰雹', 99: '雷雨挾冰雹'
 };
+const WEATHER_ICON_MAP = {
+  0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️',
+  51: '🌦️', 53: '🌦️', 55: '🌦️', 61: '🌧️', 63: '🌧️', 65: '🌧️',
+  71: '🌨️', 73: '🌨️', 75: '🌨️', 80: '🌦️', 81: '🌧️', 82: '⛈️',
+  95: '⛈️', 96: '⛈️', 99: '⛈️'
+};
 async function loadWeather() {
   $('#weatherPlace').textContent = WEATHER_PLACE_NAME;
   try {
@@ -395,18 +430,19 @@ async function loadWeather() {
     const cur = data.current;
     const daily = data.daily;
     const desc = WEATHER_CODE_MAP[cur.weather_code] || '—';
-    const weekday = ['日','一','二','三'];
+    const icon = WEATHER_ICON_MAP[cur.weather_code] || '🌡️';
+    const weekday = ['日','一','二','三','四','五','六'];
     let rows = '';
     for (let i = 1; i < daily.time.length; i++) {
       const d = new Date(daily.time[i]);
-      rows += `<div class="b-weather-day-row"><span>週${weekday[d.getDay()] || d.getDay()}</span>
-        <span>${WEATHER_CODE_MAP[daily.weather_code[i]] || ''}</span>
+      rows += `<div class="b-weather-day-row"><span>週${weekday[d.getDay()]}</span>
+        <span>${WEATHER_ICON_MAP[daily.weather_code[i]] || ''} ${WEATHER_CODE_MAP[daily.weather_code[i]] || ''}</span>
         <span>${Math.round(daily.temperature_2m_max[i])}° / ${Math.round(daily.temperature_2m_min[i])}°</span></div>`;
     }
     $('#weatherBody').innerHTML = `
       <div class="b-weather-now">
         <div class="b-weather-temp">${Math.round(cur.temperature_2m)}°</div>
-        <div class="b-weather-desc">${desc}</div>
+        <div class="b-weather-desc"><span class="b-weather-icon">${icon}</span>${desc}</div>
       </div>
       <div class="b-weather-days">${rows}</div>`;
   } catch (e) {
