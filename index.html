@@ -86,6 +86,7 @@
   .b-weather { flex: 1; }
   .b-list { flex:1; overflow:hidden; display:flex; flex-direction:column; gap:1vh; }
   .b-row { display:flex; gap:0.8vw; font-size:2.1vh; line-height:1.3; }
+  .b-row-done { opacity:.4; text-decoration:line-through; }
   .b-row .mark { width:1.2vh; height:1.2vh; border-radius:50%; background:var(--stamp); flex-shrink:0; margin-top:0.8vh; }
   .b-empty { color:var(--ink-soft); font-family:'Lora',serif; font-style:italic; font-size:1.8vh; }
   .b-calendar iframe { flex:1; width:100%; border:none; border-radius:8px; background:#fff; }
@@ -146,9 +147,7 @@
 <div id="bannerRoot" hidden>
   <button class="banner-exit" id="bannerExitBtn" type="button">離開橫幅模式</button>
 
-  <div class="b-col b-memo">
-    <div class="b-title">備忘錄</div>
-    <div class="b-list" id="bMemoList"></div>
+   <div class="b-col b-memo"> <div class="b-title">備忘錄</div> <div class="b-list" id="bMemoList"></div> </div> <div class="b-col b-todo"> <div class="b-title">今日代辦</div> <div class="b-list" id="bTodoList"></div> </div> <div class="b-col b-calendar">
   </div>
 
   <div class="b-col b-calendar">
@@ -283,6 +282,7 @@ function renderTodos() {
   const items = todoView === 'date'
     ? todos.filter(t => t.date === selectedDate).sort((a,b) => (a.createdAt||0)-(b.createdAt||0))
     : todos.filter(t => !t.done).sort((a,b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||0)-(b.createdAt||0));
+     renderBannerTodos();
   todoList.innerHTML = items.length === 0
     ? `<div class="empty">${todoView === 'date' ? '這天還沒有代辦事項。' : '太好了，沒有未完成的代辦事項。'}</div>`
     : items.map(t => `
@@ -307,7 +307,7 @@ document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', (
   $('#memoSection').hidden = b.dataset.tab !== 'memo';
   $('#todoSection').hidden = b.dataset.tab !== 'todo';
 }));
-
+ /* ---------------- 樫幅看板：代辦事項欄（只顯示今天的） ---------------- */ function renderBannerTodos() { const el = $('#bTodoList'); if (!el) return; const t = todayStr(); const shown = todos .filter(x => x.date === t) .sort((a, b) => (a.done !== b.done) ? (a.done ? 1 : -1) : (a.createdAt || 0) - (b.createdAt || 0)) .slice(0, 8); el.innerHTML = shown.length === 0 ? '<div class="b-empty">今天還沒有代辦事項</div>' : shown.map(x => `<div class="b-row ${x.done ? 'b-row-done' : ''}"><span class="mark"></span><span>${esc(x.text)}</span></div>`).join(''); }
 /* ---------------- 橫幅看板：備忘錄欄 ---------------- */
 function renderBannerMemos() {
   const el = $('#bMemoList');
