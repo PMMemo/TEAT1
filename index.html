@@ -95,9 +95,10 @@
   .b-title { font-family:'Lora',serif; font-weight:600; font-size:4vh; margin-bottom:2vh; padding-bottom:1.6vh;
     border-bottom:1px solid var(--rule); flex-shrink:0; display:flex; align-items:baseline; gap:1vh; flex-wrap:wrap; }
   .b-title-date { font-size:1.8vh; color:var(--ink-soft); font-weight:600; font-family:'Inter',sans-serif; }
-  .b-memo { flex: 0 0 20vw; }
-  .b-todo { flex: 0 0 22vw; }
-  .b-calendar { flex: 0 0 26vw; }
+  .b-memo { flex: 0 0 15vw; }
+  .b-todo { flex: 0 0 17vw; }
+  .b-traffic { flex: 0 0 22vw; }
+  .b-calendar { flex: 0 0 20vw; }
   .b-weather { flex: 1; }
   .b-list { flex:1; overflow:hidden; display:flex; flex-direction:column; gap:1.6vh; }
   .b-row { display:flex; align-items:flex-start; gap:1vw; font-size:4.2vh; line-height:1.25; }
@@ -111,7 +112,8 @@
   .b-empty { color:var(--ink-soft); font-family:'Lora',serif; font-style:italic; font-size:3.4vh; }
   .b-calendar iframe { flex:1; width:118%; height:118%; border:none; border-radius:8px; background:#fff;
     transform: scale(0.847); transform-origin: top left; }
-  .b-calendar { overflow:hidden; }
+  .b-calendar, .b-traffic { overflow:hidden; }
+  .b-traffic iframe { flex:1; width:100%; border:none; border-radius:8px; background:#fff; }
   .b-weather-now { display:flex; align-items:baseline; gap:1.2vw; margin-bottom:3vh; }
   .b-weather-temp { font-family:'Lora',serif; font-weight:600; font-size:16vh; line-height:1; position:relative; }
   .b-weather-temp::after {
@@ -186,6 +188,11 @@
     <div class="b-list" id="bTodoList"></div>
   </div>
 
+  <div class="b-col b-traffic">
+    <div class="b-title">配送路況</div>
+    <iframe id="trafficFrame" src="" loading="lazy"></iframe>
+  </div>
+
   <div class="b-col b-calendar">
     <div class="b-title" style="display:flex; justify-content:space-between;">
       <span>行事曆</span><span class="b-clock" id="bClock"></span>
@@ -225,6 +232,15 @@ const GOOGLE_CALENDAR_ID = "b68dfc491bd8de7a3b7b116aa8dfa5946c7f20342ac68de86e1b
 const WEATHER_LAT = 25.033;
 const WEATHER_LON = 121.565;
 const WEATHER_PLACE_NAME = "台北";
+
+// 4) 配送路況：Google Maps 平台 → 憑證 → 建立 API 金鑰（需要啟用 Maps Embed API，且專案要綁信用卡，但 Embed API 本身不收費）
+const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
+const ROUTE_STOPS = [
+  "新北市永和區保平路50巷1號",           // 央廚
+  "新北市永和區仁愛路98號1樓",           // 永和店
+  "台北市信義區忠孝東路五段372巷27弄75號1樓", // 永春店（請確認地址是否正確）
+  "臺北市內湖區明湖里康寧路三段189巷11弄10號1樓" // 東湖店
+];
 
 const FIREBASE_NOT_CONFIGURED = firebaseConfig.apiKey === "YOUR_API_KEY";
 
@@ -387,6 +403,28 @@ function renderBannerTodos() {
   }));
 }
 
+/* ---------------- 橫幅看板：配送路況欄 ---------------- */
+function initTraffic() {
+  const frame = $('#trafficFrame');
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.startsWith('YOUR_')) {
+    frame.replaceWith(Object.assign(document.createElement('div'), {
+      className: 'b-empty',
+      textContent: '尚未設定 Google Maps API 金鑰（見程式碼最上方設定區）'
+    }));
+    return;
+  }
+  const [origin, ...rest] = ROUTE_STOPS;
+  const destination = rest[rest.length - 1];
+  const waypoints = rest.slice(0, -1);
+  const params = new URLSearchParams({
+    key: GOOGLE_MAPS_API_KEY,
+    origin, destination,
+    mode: 'driving'
+  });
+  if (waypoints.length) params.set('waypoints', waypoints.join('|'));
+  frame.src = `https://www.google.com/maps/embed/api/directions?${params.toString()}`;
+}
+
 /* ---------------- 橫幅看板：行事曆欄 ---------------- */
 function initCalendar() {
   const frame = $('#calendarFrame');
@@ -463,6 +501,7 @@ async function init() {
     $('#normalRoot').hidden = true;
     $('#bannerRoot').hidden = false;
     initCalendar();
+    initTraffic(); setInterval(initTraffic, 10 * 60 * 1000); // 每 10 分鐘重新整理一次路況
     tickClock(); setInterval(tickClock, 30000);
     loadWeather(); setInterval(loadWeather, 15 * 60 * 1000); // 每 15 分鐘更新一次
   }
